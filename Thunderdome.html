@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CRM Health Report Builder</title>
+<style>
+  :root{--blue:#1C53E5;--orange:#FF7922;--tan:#E3DFCB;--tan-soft:#F5F2E8;--ink:#14171C;
+    --muted:#5B6270;--line:#E4E2D8;--white:#fff;--good:#1E7A34;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#DFDDD3}
+  .app{display:flex;gap:22px;padding:22px;align-items:flex-start}
+  .left{flex:0 0 350px;background:var(--white);border:1px solid var(--line);border-radius:10px;
+    padding:18px;position:sticky;top:22px;max-height:96vh;overflow:auto;box-shadow:0 6px 22px rgba(20,30,60,.07)}
+  .left h2{font-size:15px;color:var(--blue)} .left .sub{font-size:11px;color:var(--muted);margin:3px 0 12px}
+  .grp{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--blue);
+    margin:15px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px;display:flex;justify-content:space-between}
+  .grp span{color:var(--muted);font-weight:700}
+  .f{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:10px}
+  .f label{font-size:11.5px;color:#2C313B;flex:1}
+  .f input{width:96px;font-family:Arial;font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;text-align:right}
+  .f input[type=text]{text-align:left}
+  .f input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(28,83,229,.12)}
+  .wsum{font-size:11px;margin-top:4px} .wsum.ok{color:var(--good)} .wsum.bad{color:#C00000;font-weight:700}
+  details{margin-top:6px} summary{cursor:pointer;font-size:11px;color:var(--muted)}
+  .btns{display:flex;gap:8px;margin-top:14px}
+  .btn{flex:1;font-family:Arial;font-weight:700;font-size:12px;padding:10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  .btn.warn{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .board{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:14px}
+  .pill{background:var(--tan-soft);border:1px solid var(--line);border-radius:7px;padding:7px 6px;text-align:center}
+  .pill .v{font-size:16px;font-weight:700}.pill .k{font-size:9px;color:var(--muted);margin-top:2px}
+  .scorebig{margin-top:8px;background:var(--blue);color:#fff;border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center}
+  .scorebig .k{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#C8D6FF}.scorebig .v{font-size:24px;font-weight:700}
+  .right{flex:0 0 auto}
+  .toolbar{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .page{width:8.5in;min-height:11in;background:#fff;border-radius:4px;box-shadow:0 12px 44px rgba(20,30,60,.12);
+    padding:0.45in 0.5in 0.35in;display:flex;flex-direction:column}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--blue);padding-bottom:11px}
+  .wordmark{font-size:12px;font-weight:700;letter-spacing:3px;color:var(--blue);text-transform:uppercase}
+  .doc-title{font-size:21px;font-weight:700;letter-spacing:-.4px;margin-top:5px}.doc-title span{color:var(--blue)}
+  .rmeta{text-align:right;font-size:11.5px;color:var(--muted);line-height:1.55}.rmeta b{color:var(--ink);font-size:13.5px}
+  .hero{display:flex;gap:16px;margin:15px 0 4px}
+  .score-card{flex:0 0 210px;background:var(--blue);color:#fff;border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+  .score-card::after{content:"";position:absolute;right:-40px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,121,34,.22)}
+  .score-label{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:#BBCCFF;font-weight:700}
+  .score-num{font-size:54px;font-weight:700;line-height:1;margin-top:3px}.score-num small{font-size:20px;color:#C8D6FF}
+  .score-trend{margin-top:8px;font-size:12px;color:#EAF0FF}.score-trend b{background:rgba(255,255,255,.16);padding:2px 8px;border-radius:20px;font-size:11.5px}
+  .cats{flex:1;display:flex;flex-direction:column;justify-content:center;gap:9px}
+  .cat{display:flex;align-items:center;gap:10px}
+  .cat .cl{flex:0 0 100px;font-size:11.5px;font-weight:700}
+  .cat .ct{flex:1;height:9px;background:#EEECE3;border-radius:20px;overflow:hidden}
+  .cat .cf{height:100%;border-radius:20px;background:var(--blue)}
+  .cat .cv{flex:0 0 34px;text-align:right;font-size:12px;font-weight:700}
+  .cat small{display:block;font-size:9px;color:var(--muted);font-weight:400}
+  .sec{font-size:11.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--blue);margin:16px 0 9px;display:flex;align-items:center;gap:9px}
+  .sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sec.opp{color:var(--orange)} .sec.good{color:var(--good)}
+  .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .tile{border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:8px;padding:10px 11px}
+  .tile .n{font-size:22px;font-weight:700;line-height:1}.tile .l{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .hh{border-radius:9px;padding:3px 14px}
+  .hh.good{background:#EEF6EF;border:1px solid #CFE7D5}
+  .hh.bad{background:#FFF6EC;border:1px solid #F3DCC0}
+  .hh.info{background:#ffffff;border:1px solid #C9D6F5}
+  .hh.info .tick{color:var(--blue)}
+  .hh.info .val{color:var(--blue);font-weight:700;margin-left:10px;flex:0 0 auto}
+  .hh .row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:12px}
+  .hh .row:last-child{border-bottom:none}
+  .hh .lab{font-weight:700}
+  .hh .gap{font-size:10.5px;font-weight:400;color:#6a6152;margin-top:2px}
+  .hh .tick{color:var(--good);font-weight:700;margin-right:6px}
+  .hh.good .val{color:var(--good);font-weight:700;margin-left:10px;flex:0 0 auto}
+  .hh.bad .val{color:var(--orange);font-weight:700;margin-left:10px;flex:0 0 auto}
+  .hh .empty{font-size:11.5px;color:var(--muted);padding:11px 0;font-style:italic}
+  .cta{margin-top:15px;background:var(--ink);color:#fff;border-radius:10px;padding:15px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .cta .t{font-size:14.5px;font-weight:700}.cta .s{font-size:11.5px;color:#C7CBD3;margin-top:3px;max-width:430px;line-height:1.5}
+  .cta .btn2{flex:0 0 auto;background:var(--blue);color:#fff;font-weight:700;font-size:12.5px;padding:10px 18px;border-radius:8px;text-decoration:none}
+  .formula{font-size:9.5px;color:var(--muted);margin-top:8px}
+  footer{margin-top:auto;padding-top:10px;border-top:2px solid var(--tan);display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+  @media print{body{background:#fff}.app{padding:0;display:block}.left,.toolbar{display:none!important}
+    .page{box-shadow:none;width:100%;min-height:auto;border-radius:0;padding:0.35in 0.45in}@page{size:letter;margin:0}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <h2>CRM Health Report Builder</h2>
+    <div class="sub">Enter the month&rsquo;s counts. Everything updates live.</div>
+    <div class="grp">Google Sheet</div>
+    <div class="f" style="flex-direction:column;align-items:stretch;gap:6px">
+      <input type="text" id="sheeturl" placeholder="Paste Google Sheet link&hellip;" style="width:100%">
+      <button class="btn" style="width:100%" onclick="loadSheet()">Load Sheet</button>
+      <div id="sheetrowwrap" style="display:none;margin-top:2px">
+        <select id="rowpicker" style="width:100%;font-family:Arial;font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:6px"></select>
+        <button class="btn" style="width:100%;margin-top:6px" onclick="applySheetRow()">Load selected row</button>
+      </div>
+      <div id="sheetmsg" style="font-size:10.5px;color:var(--muted)">Sheet must be shared as &ldquo;Anyone with the link can view.&rdquo;</div>
+    </div>
+    <div class="grp">Client</div>
+    <div class="f"><label>Client name</label><input type="text" id="cname" value="Sarah Mitchell"></div>
+    <div class="f"><label>Month</label><input type="text" id="cmonth" value="July"></div>
+    <div class="f"><label>Year</label><input type="text" id="cyear" value="2026"></div>
+    <div class="f"><label>Booking link</label><input type="text" id="cbook" value="https://crmrefresh.org/KIC-Session"></div>
+    <div class="grp">Hygiene <span>60%</span></div>
+    <div class="f"><label>Total contacts</label><input type="number" id="total" value="1284"></div>
+    <div class="f"><label>Missing email</label><input type="number" id="missemail" value="116"></div>
+    <div class="f"><label>Missing phone</label><input type="number" id="missphone" value="77"></div>
+    <div class="f"><label>Missing address</label><input type="number" id="missaddr" value="205"></div>
+    <div class="f"><label># of duplicates</label><input type="number" id="dups" value="51"></div>
+    <div class="f"><label># pending review</label><input type="number" id="pending" value="23"></div>
+    <div class="f"><label># of ungrouped</label><input type="number" id="ungrp" value="141"></div>
+    <div class="f"><label>Undeliverable tagged</label><input type="number" id="tagged_undel" value="50"></div>
+    <div class="f"><label>Unsubscribed tagged</label><input type="number" id="tagged_unsub" value="38"></div>
+    <div class="f"><label>Und/Unsub NOT tagged</label><input type="number" id="nottag" value="12"></div>
+    <div class="grp">Activation <span>40%</span></div>
+    <div class="f"><label>Action plans set up</label><input type="number" id="apset" value="9"></div>
+    <div class="f"><label>Action plans active</label><input type="number" id="apact" value="7"></div>
+    <div class="f"><label>Total open tasks</label><input type="number" id="tasks" value="120"></div>
+    <div class="f"><label>Overdue tasks</label><input type="number" id="overdue" value="18"></div>
+    <div class="grp">Buyers &amp; Clients</div>
+    <div class="f"><label>Total past buyers</label><input type="number" id="pbtotal" value="340"></div>
+    <div class="f"><label>Past buyers missing email</label><input type="number" id="pbmissemail" value="28"></div>
+    <div class="f"><label>Total active clients</label><input type="number" id="actotal" value="95"></div>
+    <div class="f"><label>Active clients, no recent activity</label><input type="number" id="acstale" value="11"></div>
+    <div class="grp">This month&rsquo;s work</div>
+    <div class="f"><label>Duplicates merged</label><input type="number" id="dupmerged" value="47"></div>
+    <div class="f"><label>Ungrouped organized</label><input type="number" id="ungrporg" value="63"></div>
+    <div class="f"><label>Past clients updated</label><input type="number" id="enriched" value="112"></div>
+    <div class="f"><label>Contacts with updated info</label><input type="number" id="infoupdated" value="0"></div>
+    <div class="f"><label>Undeliverable newly tagged</label><input type="number" id="newtag_undel" value="20"></div>
+    <div class="f"><label>Unsubscribed newly tagged</label><input type="number" id="newtag_unsub" value="14"></div>
+    <div class="f"><label>Pending review organized</label><input type="number" id="pendorg" value="0"></div>
+    <div class="grp">Trend</div>
+    <div class="f"><label>Last month&rsquo;s score <span style="color:#9AA0AB">(blank=1st)</span></label><input type="number" id="lastscore" value="79"></div>
+    <div class="grp">Notes</div>
+    <div class="f" style="align-items:flex-start"><textarea id="notes" rows="4" style="width:100%;font-family:Arial;font-size:12px;padding:6px 7px;border:1px solid var(--line);border-radius:6px;resize:vertical" placeholder="Optional notes for this month's report&hellip;"></textarea></div>
+    <div class="grp">File Import <span style="font-weight:400;color:#9AA0AB">(optional)</span></div>
+    <div class="f"><label>Records imported</label><input type="number" id="impcount" value="0"></div>
+    <div class="f" style="align-items:flex-start">
+      <label style="padding-top:2px">Included data</label>
+      <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:#2C313B">Names</span><input type="number" id="imp_names" value="0" style="width:70px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:#2C313B">Phone numbers</span><input type="number" id="imp_phones" value="0" style="width:70px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:#2C313B">Emails</span><input type="number" id="imp_emails" value="0" style="width:70px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:#2C313B">Addresses</span><input type="number" id="imp_addresses" value="0" style="width:70px"></div>
+      </div>
+    </div>
+    <details><summary>Adjust weights &amp; cutoff</summary>
+      <div class="f" style="margin-top:8px"><label>Hygiene %</label><input type="number" id="wh" value="60"></div>
+      <div class="f"><label>Activation %</label><input type="number" id="wa" value="40"></div>
+      <div class="wsum" id="wsum">Weights sum: 100%</div>
+      <div class="f" style="margin-top:8px"><label>Helping/hurting cutoff %</label><input type="number" id="cutoff" value="85"></div>
+    </details>
+    <div class="board">
+      <div class="pill"><div class="v" id="pH">—</div><div class="k">Hygiene</div></div>
+      <div class="pill"><div class="v" id="pA">—</div><div class="k">Activation</div></div>
+    </div>
+    <div class="scorebig"><span class="k">Health Score</span><span class="v" id="bigscore">—</span></div>
+    <div class="btns"><button class="btn warn" onclick="exportPDF()">Export as PDF</button><button class="btn" onclick="exportImage()">Export as Image</button></div>
+    <div class="btns"><button class="btn" onclick="loadSample()">Sample</button></div>
+  </div>
+  <div class="right">
+    <div class="toolbar">Live preview &mdash; prints to US Letter</div>
+    <div class="page">
+      <div class="top">
+        <div><div class="wordmark">CRM Refresh</div><div class="doc-title">CRM Health <span>Report</span></div></div>
+        <div class="rmeta">Prepared for<br><b id="r_name">—</b><br><span id="r_period">—</span> &middot; Keep It Clean</div>
+      </div>
+      <div class="hero">
+        <div class="score-card">
+          <div class="score-label">CRM Health Score</div>
+          <div class="score-num"><span id="r_score">—</span><small>/100</small></div>
+          <div class="score-trend"><b id="r_trend">—</b> &nbsp;<span id="r_trendtxt"></span></div>
+        </div>
+        <div class="cats">
+          <div class="cat"><div class="cl">Hygiene<small>data is clean</small></div><div class="ct"><div class="cf" id="cfH"></div></div><div class="cv" id="cvH">—</div></div>
+          <div class="cat"><div class="cl">Activation<small>data is worked</small></div><div class="ct"><div class="cf" id="cfA"></div></div><div class="cv" id="cvA">—</div></div>
+        </div>
+      </div>
+      <div class="sec">What we maintained this month</div>
+      <div class="tiles">
+        <div class="tile"><div class="n" id="t_merged">—</div><div class="l">Duplicates Merged</div></div>
+        <div class="tile"><div class="n" id="t_pendorg">—</div><div class="l">Pending Review Organized</div></div>
+        <div class="tile"><div class="n" id="t_ungrp">—</div><div class="l">Ungrouped Organized</div></div>
+        <div class="tile"><div class="n" id="t_enrich">—</div><div class="l">Contacts Enriched</div></div>
+        <div class="tile"><div class="n" id="t_tag">—</div><div class="l">Und/Unsub Emails Tagged</div></div>
+      </div>
+      <div class="twocol" style="margin-top:15px">
+        <div><div class="sec good" style="margin-top:0">What&rsquo;s helping your score</div><div class="hh good" id="helping"></div></div>
+        <div><div class="sec opp" style="margin-top:0">What&rsquo;s hurting your score</div><div class="hh bad" id="hurting"></div></div>
+      </div>
+      <div class="cta">
+        <div><div class="t">Questions? Or ready to fix what&rsquo;s hurting your score?</div>
+          <div class="s">Book a session and we&rsquo;ll walk through your priorities together &mdash; it&rsquo;s already included in your plan.</div></div>
+        <a class="btn2" id="r_book" href="#">Book My Session &rarr;</a>
+      </div>
+      <div class="twocol" id="niRow" style="margin-top:15px">
+        <div id="impcol">
+          <div class="sec" id="impsec" style="display:none">This Month&rsquo;s File Imports</div>
+          <div class="hh info" id="impbox" style="display:none"></div>
+        </div>
+        <div id="notescol">
+          <div class="sec" id="notessec" style="display:none">Notes from the CRM Refresh Team</div>
+          <div id="notesbox" style="display:none;font-size:11.5px;color:#2C313B;line-height:1.55;white-space:pre-wrap;background:var(--tan-soft);border:1px solid var(--line);border-radius:9px;padding:11px 14px"></div>
+        </div>
+      </div>
+      <div class="formula">Health Score = 60% Hygiene (completeness, dedup, organization, suppression tagging, truly active clients) &middot; 40% Activation (plans active, tasks on time, past buyers receiving greeting, likely-to-sell contacts)</div>
+      <footer><span>keepitclean@crmrefresh.org</span><span id="r_foot">Keep It Clean</span></footer>
+    </div>
+  </div>
+</div>
+<script>
+  const $=id=>document.getElementById(id);
+  const n=id=>{const v=parseFloat($(id).value);return isNaN(v)?0:v;};
+  const rate=(a,b)=>b>0?Math.max(0,Math.min(100,a/b*100)):0;
+  function recompute(){
+    const total=n('total');
+    const cEmail=rate(total-n('missemail'),total), cPhone=rate(total-n('missphone'),total), cAddr=rate(total-n('missaddr'),total);
+    const completeness=(cEmail+cPhone+cAddr)/3;
+    const dedup=rate(total-n('dups'),total);
+    const org=rate(total-n('ungrp'),total);
+    const supDen=(n('tagged_undel')+n('tagged_unsub'))+n('nottag'); const suppression=supDen>0?rate(n('tagged_undel')+n('tagged_unsub'),supDen):100;
+    const acTotal=n('actotal'), acFreshRate=acTotal>0?rate(acTotal-n('acstale'),acTotal):100;
+    const H=(completeness+dedup+org+suppression+acFreshRate)/5;
+    const planAct=n('apset')>0?rate(n('apact'),n('apset')):0;
+    const onTime=n('tasks')>0?rate(n('tasks')-n('overdue'),n('tasks')):100;
+    const pbTotal=n('pbtotal'), pbEmailRate=pbTotal>0?rate(pbTotal-n('pbmissemail'),pbTotal):100;
+    const addrRate=rate(total-n('missaddr'),total);
+    const A=(planAct+onTime+pbEmailRate+addrRate)/4;
+    let wh=n('wh'),wa=n('wa'); const ws=wh+wa;
+    $('wsum').textContent='Weights sum: '+ws+'%'; $('wsum').className='wsum '+(ws===100?'ok':'bad');
+    const score=Math.round((H*wh+A*wa)/(ws||1));
+    const rH=Math.round(H),rA=Math.round(A);
+    $('pH').textContent=rH; $('pA').textContent=rA; $('bigscore').textContent=score;
+    $('r_name').textContent=$('cname').value||'—';
+    const period=(($('cmonth').value||'')+' '+($('cyear').value||'')).trim();
+    $('r_period').textContent=period||'—'; $('r_foot').textContent='Keep It Clean · '+period; $('r_book').href=$('cbook').value||'#';
+    $('r_score').textContent=score;
+    const last=$('lastscore').value.trim();
+    if(last===''){$('r_trend').textContent='New';$('r_trendtxt').textContent='your first report';}
+    else{const d=score-parseFloat(last);$('r_trend').textContent=(d>0?'↑ ':d<0?'↓ ':'→ ')+Math.abs(d)+' pts';$('r_trendtxt').textContent='since last month';}
+    $('cfH').style.width=rH+'%';$('cvH').textContent=rH;
+    $('cfA').style.width=rA+'%';$('cvA').textContent=rA;
+    $('t_merged').textContent=n('dupmerged').toLocaleString();
+    $('t_ungrp').textContent=n('ungrporg').toLocaleString();
+    $('t_enrich').textContent=(n('enriched')+n('infoupdated')).toLocaleString();
+    $('t_tag').textContent=(n('newtag_undel')+n('newtag_unsub')).toLocaleString();
+    $('t_pendorg').textContent=n('pendorg').toLocaleString();
+    const notesVal=$('notes').value.trim();
+    if(notesVal){$('notessec').style.display='';$('notesbox').style.display='';$('notesbox').textContent=notesVal;}
+    else{$('notessec').style.display='none';$('notesbox').style.display='none';}
+    const impCount=n('impcount');
+    if(impCount>0){
+      const items=[
+        ['Names', n('imp_names')],
+        ['Phone Numbers', n('imp_phones')],
+        ['Emails', n('imp_emails')],
+        ['Addresses', n('imp_addresses')]
+      ].filter(it=>it[1]>0);
+      $('impsec').style.display='';$('impbox').style.display='';
+      let rows=`<div class="row"><div><span class="lab">Records Imported</span></div><div class="val">${impCount.toLocaleString()}</div></div>`;
+      rows+=items.map(it=>`<div class="row"><div><span class="lab">${it[0]}</span></div><div class="val">${it[1].toLocaleString()}</div></div>`).join('');
+      $('impbox').innerHTML=rows;
+    } else {
+      $('impsec').style.display='none';$('impbox').style.display='none';
+    }
+    const showNotes=!!notesVal, showImp=impCount>0;
+    $('impcol').style.display=showImp?'':'none';
+    $('notescol').style.display=showNotes?'':'none';
+    $('niRow').style.display=(showImp||showNotes)?'grid':'none';
+    $('niRow').style.gridTemplateColumns=(showImp&&showNotes)?'1fr 1fr':'1fr';
+
+    // helping / hurting sort
+    const cut=n('cutoff');
+    const taskNA=(n('tasks')===0 && n('overdue')===0);
+    const metrics=[
+      {label:'Data Completeness', value:completeness, gap:n('missemail')+' Contacts Missing An Email'},
+      {label:'Deduplication', value:dedup, gap:n('dups')+' Duplicate Records Remain'},
+      {label:'Organization', value:org, gap:n('ungrp')+' Contacts Still Ungrouped'},
+      {label:'Action-Plan Activation', value:planAct, gap:Math.max(0,n('apset')-n('apact'))+' Plans Set Up But Inactive'},
+      {label:'Likely To Sell Possibilities', value:addrRate, gap:n('missaddr')+' Contacts Missing A Mailing Address'}
+    ];
+    if(!taskNA) metrics.push({label:'Task Follow-Up', value:onTime, gap:n('overdue')+' Tasks Overdue'});
+    metrics.push({label:'Email Deliverability', value:suppression, gap:n('nottag')+' Undeliverable/Unsubscribed Contacts Not Tagged'});
+    metrics.push({label:'Past Buyers Receiving Your Greeting', value:pbEmailRate, gap:n('pbmissemail')+' Past Buyers Missing An Email'});
+    metrics.push({label:'Truly Active Clients', value:acFreshRate, gap:n('acstale')+' Active Clients With No Recent Activity'});
+    const forcedHurt=[];
+    if(taskNA) forcedHurt.push({label:'Task Follow-Up', value:onTime, gap:'No open tasks to measure', display:'N/A'});
+    const help=metrics.filter(m=>m.value>=cut).sort((a,b)=>b.value-a.value);
+    const hurt=metrics.filter(m=>m.value<cut).concat(forcedHurt).sort((a,b)=>a.value-b.value);
+    $('helping').innerHTML = help.length
+      ? help.map(m=>`<div class="row"><div><span class="tick">✓</span><span class="lab">${m.label}</span></div><div class="val">${m.display||Math.round(m.value)+'%'}</div></div>`).join('')
+      : `<div class="empty">Building the foundation — see priorities at right.</div>`;
+    $('hurting').innerHTML = hurt.length
+      ? hurt.map(m=>`<div class="row"><div><span class="lab">${m.label}</span><div class="gap">${m.gap}</div></div><div class="val">${m.display||Math.round(m.value)+'%'}</div></div>`).join('')
+      : `<div class="empty">Nothing major dragging your score — your CRM is in excellent shape.</div>`;
+  }
+  function filenameBase(){
+    const safe=s=>(s||'').replace(/[^a-z0-9]+/gi,' ').trim();
+    return safe($('cname').value||'Client')+' - CRM Health Score ('+safe($('cmonth').value)+' '+safe($('cyear').value)+')';
+  }
+  async function exportImage(){
+    const page=document.querySelector('.page');
+    const canvas=await html2canvas(page,{scale:2,backgroundColor:'#ffffff'});
+    const link=document.createElement('a');
+    link.download=filenameBase()+'.png';
+    link.href=canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  }
+  async function exportPDF(){
+    const page=document.querySelector('.page');
+    const canvas=await html2canvas(page,{scale:2,backgroundColor:'#ffffff'});
+    const imgData=canvas.toDataURL('image/png');
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({unit:'in',format:'letter'});
+    pdf.addImage(imgData,'PNG',0,0,8.5,11);
+    // Overlay a real clickable link where the booking button sits on the page
+    const bookEl=$('r_book'), bookUrl=$('cbook').value;
+    if(bookEl && bookUrl){
+      const pageRect=page.getBoundingClientRect();
+      const btnRect=bookEl.getBoundingClientRect();
+      const scaleX=8.5/pageRect.width, scaleY=11/pageRect.height;
+      const x=(btnRect.left-pageRect.left)*scaleX;
+      const y=(btnRect.top-pageRect.top)*scaleY;
+      const w=btnRect.width*scaleX, h=btnRect.height*scaleY;
+      pdf.link(x,y+h,w,-h,{url:bookUrl});
+    }
+    pdf.save(filenameBase()+'.pdf');
+  }
+  // ---- Google Sheet import ----
+  const HEADER_MAP={
+    'client name':'cname','month':'cmonth','year':'cyear','booking link':'cbook',
+    'total contacts':'total','missing email':'missemail','missing phone':'missphone','missing address':'missaddr',
+    '# of duplicates':'dups','# pending review':'pending','# of ungrouped':'ungrp',
+    '# of duplicates (remaining)':'dups','# pending review (remaining)':'pending','# of ungrouped (remaining)':'ungrp',
+    'undeliverable tagged':'tagged_undel','unsubscribed tagged':'tagged_unsub','und/unsub not tagged':'nottag',
+    'undeliverable tagged (total)':'tagged_undel','unsubscribed tagged (total)':'tagged_unsub',
+    'action plans set up':'apset','action plans active':'apact','total open tasks':'tasks','overdue tasks':'overdue',
+    'total past buyers':'pbtotal','past buyers missing email':'pbmissemail',
+    'total active clients':'actotal','active clients no recent activity':'acstale',
+    'duplicates merged':'dupmerged','ungrouped organized':'ungrporg',
+    'past clients updated':'enriched','contacts with updated info':'infoupdated',
+    'undeliverable newly tagged':'newtag_undel','unsubscribed newly tagged':'newtag_unsub','pending review organized':'pendorg',
+    "last month's score":'lastscore','notes':'notes',
+    'records imported':'impcount','names imported':'imp_names','phone numbers imported':'imp_phones',
+    'emails imported':'imp_emails','addresses imported':'imp_addresses',
+    'hygiene weight %':'wh','activation weight %':'wa','helping/hurting cutoff %':'cutoff',
+    'helping/ hurting cutoff %':'cutoff'
+  };
+  let sheetRows=[];
+  function buildCsvUrl(url){
+    const gidMatch=url.match(/[?&#]gid=([0-9]+)/);
+    const gid=gidMatch?gidMatch[1]:'0';
+    const pubMatch=url.match(/\/d\/e\/([a-zA-Z0-9-_]+)/);
+    if(pubMatch) return `https://docs.google.com/spreadsheets/d/e/${pubMatch[1]}/pub?gid=${gid}&single=true&output=csv`;
+    const idMatch=url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if(idMatch) return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv&gid=${gid}`;
+    return null;
+  }
+  function parseCSV(text){
+    const rows=[]; let i=0, field='', row=[], inQuotes=false;
+    const pushField=()=>{row.push(field);field='';};
+    const pushRow=()=>{rows.push(row);row=[];};
+    while(i<text.length){
+      const c=text[i];
+      if(inQuotes){
+        if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;} else {inQuotes=false;i++;} }
+        else{field+=c;i++;}
+      } else {
+        if(c==='"'){inQuotes=true;i++;}
+        else if(c===','){pushField();i++;}
+        else if(c==='\r'){i++;}
+        else if(c==='\n'){pushField();pushRow();i++;}
+        else{field+=c;i++;}
+      }
+    }
+    if(field.length||row.length){pushField();pushRow();}
+    if(!rows.length) return [];
+    const headers=rows[0].map(h=>h.trim());
+    return rows.slice(1).filter(r=>r.some(v=>v!==''&&v!==undefined)).map(r=>{
+      const obj={}; headers.forEach((h,idx)=>obj[h]=r[idx]!==undefined?r[idx]:''); return obj;
+    });
+  }
+  async function loadSheet(){
+    const url=$('sheeturl').value.trim();
+    const msg=$('sheetmsg');
+    if(!url){msg.textContent='Paste a Google Sheet link first.';return;}
+    const csvUrl=buildCsvUrl(url);
+    if(!csvUrl){msg.textContent='Could not read that link — make sure it\'s a Google Sheets URL.';return;}
+    msg.textContent='Loading\u2026';
+    try{
+      const res=await fetch(csvUrl);
+      if(!res.ok) throw new Error('fetch failed');
+      const text=await res.text();
+      const rows=parseCSV(text);
+      if(!rows.length){msg.textContent='No rows found. Check the sheet has data and is shared as "Anyone with the link can view."';return;}
+      sheetRows=rows;
+      const sel=$('rowpicker'); sel.innerHTML='';
+      rows.forEach((r,i)=>{
+        const label=(r['Client name']||'Row '+(i+1))+' — '+(r['Month']||'')+' '+(r['Year']||'');
+        const opt=document.createElement('option'); opt.value=i; opt.textContent=label; sel.appendChild(opt);
+      });
+      $('sheetrowwrap').style.display='';
+      msg.textContent=rows.length+' row(s) found — pick one below.';
+    }catch(err){
+      msg.textContent='Could not load that sheet. Confirm sharing is set to "Anyone with the link can view," or try a Publish-to-web CSV link instead.';
+    }
+  }
+  function applySheetRow(){
+    const i=parseInt($('rowpicker').value,10);
+    if(sheetRows[i]) applyRow(sheetRows[i]);
+    $('sheetmsg').textContent='Loaded: '+$('rowpicker').selectedOptions[0].textContent;
+  }
+  function applyRow(row){
+    const normalized={};
+    Object.keys(row).forEach(k=>normalized[k.trim().toLowerCase()]=row[k]);
+    Object.keys(HEADER_MAP).forEach(h=>{
+      const id=HEADER_MAP[h];
+      if(normalized[h]!==undefined && normalized[h]!=='' && $(id)) $(id).value=normalized[h];
+    });
+    recompute();
+  }
+  function loadSample(){
+    const v={cname:'Sarah Mitchell',cmonth:'July',cyear:'2026',cbook:'https://crmrefresh.org/KIC-Session',total:1284,missemail:116,missphone:77,
+      missaddr:205,dups:51,ungrp:141,tagged_undel:50,tagged_unsub:38,nottag:12,pending:23,apset:9,apact:7,tasks:120,overdue:18,
+      dupmerged:47,ungrporg:63,enriched:112,infoupdated:26,newtag_undel:20,newtag_unsub:14,pendorg:9,lastscore:79,wh:60,wa:40,cutoff:85,
+      pbtotal:340,pbmissemail:28,actotal:95,acstale:11,impcount:64,
+      notes:'Great progress this month, Sarah! Once we clear the remaining duplicates and missing emails, your score should climb above 90.'};
+    for(const k in v)$(k).value=v[k];
+    $('imp_names').value=64;$('imp_phones').value=58;$('imp_emails').value=61;$('imp_addresses').value=0;
+    recompute();
+  }
+  document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('input',recompute));
+  recompute();
+</script>
+</body>
+</html>
