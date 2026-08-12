@@ -168,7 +168,7 @@
     <div class="toolbar">Live preview &mdash; prints to US Letter</div>
     <div class="page">
       <div class="top">
-        <div><div class="wordmark">CRM Refresh</div><div class="doc-title">CRM Health <span>Score</span></div></div>
+        <div><div class="wordmark">CRM Refresh</div><div class="doc-title">CRM Health <span>Report</span></div></div>
         <div class="rmeta">Prepared for<br><b id="r_name">—</b><br><span id="r_period">—</span> &middot; Keep It Clean</div>
       </div>
       <div class="hero">
@@ -209,7 +209,7 @@
           <div id="notesbox" style="display:none;font-size:11.5px;color:#2C313B;line-height:1.55;white-space:pre-wrap;background:var(--tan-soft);border:1px solid var(--line);border-radius:9px;padding:11px 14px"></div>
         </div>
       </div>
-      <div class="formula">Health Score = 60% Hygiene (completeness, dedup, organization, suppression tagging) &middot; 40% Activation (plans active, tasks on time)</div>
+      <div class="formula">Health Score = 60% Hygiene (completeness, dedup, organization, suppression tagging, truly active clients) &middot; 40% Activation (plans active, tasks on time, past buyers receiving greeting, likely-to-sell contacts)</div>
       <footer><span>keepitclean@crmrefresh.org</span><span id="r_foot">Keep It Clean</span></footer>
     </div>
   </div>
@@ -225,10 +225,13 @@
     const dedup=rate(total-n('dups'),total);
     const org=rate(total-n('ungrp'),total);
     const supDen=(n('tagged_undel')+n('tagged_unsub'))+n('nottag'); const suppression=supDen>0?rate(n('tagged_undel')+n('tagged_unsub'),supDen):100;
-    const H=(completeness+dedup+org+suppression)/4;
+    const acTotal=n('actotal'), acFreshRate=acTotal>0?rate(acTotal-n('acstale'),acTotal):100;
+    const H=(completeness+dedup+org+suppression+acFreshRate)/5;
     const planAct=n('apset')>0?rate(n('apact'),n('apset')):0;
     const onTime=n('tasks')>0?rate(n('tasks')-n('overdue'),n('tasks')):100;
-    const A=(planAct+onTime)/2;
+    const pbTotal=n('pbtotal'), pbEmailRate=pbTotal>0?rate(pbTotal-n('pbmissemail'),pbTotal):100;
+    const addrRate=rate(total-n('missaddr'),total);
+    const A=(planAct+onTime+pbEmailRate+addrRate)/4;
     let wh=n('wh'),wa=n('wa'); const ws=wh+wa;
     $('wsum').textContent='Weights sum: '+ws+'%'; $('wsum').className='wsum '+(ws===100?'ok':'bad');
     const score=Math.round((H*wh+A*wa)/(ws||1));
@@ -274,9 +277,6 @@
 
     // helping / hurting sort
     const cut=n('cutoff');
-    const addrRate=rate(total-n('missaddr'),total);
-    const pbTotal=n('pbtotal'), pbEmailRate=pbTotal>0?rate(pbTotal-n('pbmissemail'),pbTotal):100;
-    const acTotal=n('actotal'), acFreshRate=acTotal>0?rate(acTotal-n('acstale'),acTotal):100;
     const taskNA=(n('tasks')===0 && n('overdue')===0);
     const metrics=[
       {label:'Data Completeness', value:completeness, gap:n('missemail')+' Contacts Missing An Email'},
@@ -286,10 +286,10 @@
       {label:'Likely To Sell Possibilities', value:addrRate, gap:n('missaddr')+' Contacts Missing A Mailing Address'}
     ];
     if(!taskNA) metrics.push({label:'Task Follow-Up', value:onTime, gap:n('overdue')+' Tasks Overdue'});
-    const forcedHurt=[
-      {label:'Past Buyers Can&rsquo;t Receive Your Greeting', value:pbEmailRate, gap:n('pbmissemail')+' Past Buyers Missing An Email'},
-      {label:'Stale Active Clients', value:acFreshRate, gap:n('acstale')+' Active Clients With No Recent Activity'}
-    ];
+    metrics.push({label:'Email Deliverability', value:suppression, gap:n('nottag')+' Undeliverable/Unsubscribed Contacts Not Tagged'});
+    metrics.push({label:'Past Buyers Receiving Your Greeting', value:pbEmailRate, gap:n('pbmissemail')+' Past Buyers Missing An Email'});
+    metrics.push({label:'Truly Active Clients', value:acFreshRate, gap:n('acstale')+' Active Clients With No Recent Activity'});
+    const forcedHurt=[];
     if(taskNA) forcedHurt.push({label:'Task Follow-Up', value:onTime, gap:'No open tasks to measure', display:'N/A'});
     const help=metrics.filter(m=>m.value>=cut).sort((a,b)=>b.value-a.value);
     const hurt=metrics.filter(m=>m.value<cut).concat(forcedHurt).sort((a,b)=>a.value-b.value);
@@ -337,7 +337,9 @@
     'client name':'cname','month':'cmonth','year':'cyear','booking link':'cbook',
     'total contacts':'total','missing email':'missemail','missing phone':'missphone','missing address':'missaddr',
     '# of duplicates':'dups','# pending review':'pending','# of ungrouped':'ungrp',
+    '# of duplicates (remaining)':'dups','# pending review (remaining)':'pending','# of ungrouped (remaining)':'ungrp',
     'undeliverable tagged':'tagged_undel','unsubscribed tagged':'tagged_unsub','und/unsub not tagged':'nottag',
+    'undeliverable tagged (total)':'tagged_undel','unsubscribed tagged (total)':'tagged_unsub',
     'action plans set up':'apset','action plans active':'apact','total open tasks':'tasks','overdue tasks':'overdue',
     'total past buyers':'pbtotal','past buyers missing email':'pbmissemail',
     'total active clients':'actotal','active clients no recent activity':'acstale',
@@ -347,7 +349,8 @@
     "last month's score":'lastscore','notes':'notes',
     'records imported':'impcount','names imported':'imp_names','phone numbers imported':'imp_phones',
     'emails imported':'imp_emails','addresses imported':'imp_addresses',
-    'hygiene weight %':'wh','activation weight %':'wa','helping/hurting cutoff %':'cutoff'
+    'hygiene weight %':'wh','activation weight %':'wa','helping/hurting cutoff %':'cutoff',
+    'helping/ hurting cutoff %':'cutoff'
   };
   let sheetRows=[];
   function buildCsvUrl(url){
